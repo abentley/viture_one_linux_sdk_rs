@@ -1,10 +1,11 @@
 use viture_rs::Sdk;
 
 fn main() {
-    let Some(sdk) = Sdk::safe_init() else {
+    let Ok(sdk) = Sdk::init() else {
         eprintln!("Failed to initialize");
         return;
     };
     println!("{:?}", sdk);
     sdk.set_imu(true).unwrap();
+    sdk.set_3d(true).unwrap();
 }

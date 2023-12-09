@@ -60,22 +60,60 @@ fn result_from_err(discriminant: i32) -> Result<(), SdkErr> {
     }
 }
 
+/**
+ * Must be initialized to access functionality.  Will deinitialize when dropped.
+ */
 #[derive(Debug)]
 pub struct Sdk {}
 
 impl Sdk {
-    pub fn safe_init() -> Option<Self> {
+    /**
+     * Initialize the usblib and return an Sdk object to interact with the glasses.
+     */
+    pub fn init() -> Result<Self, ()> {
         use self::sys::init;
         unsafe {
             match init(Some(imu_callback), Some(mcu_callback)) {
-                true => Some(Self {}),
-                false => None,
+                true => Ok(Self {}),
+                false => Err(()),
             }
         }
     }
+    /**
+     * Set IMU state.  true: on, false: off
+     */
     pub fn set_imu(&self, on_off: bool) -> Result<(), SdkErr> {
         use self::sys::set_imu;
         unsafe { result_from_err(set_imu(on_off)) }
+    }
+    /**
+     * Get IMU state.  true: on, false: off
+     */
+    pub fn get_imu_state(&self) -> Result<bool, SdkErr> {
+        use self::sys::get_imu_state;
+        match unsafe {get_imu_state()} {
+            0 => Ok(false),
+            1 => Ok(true),
+            x => Err(x.into()),
+        }
+    }
+    /**
+     * Set 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
+     */
+    pub fn set_3d(&self, on_off: bool) -> Result<(), SdkErr> {
+        use self::sys::set_3d;
+        unsafe { result_from_err(set_3d(on_off)) }
+    }
+    /**
+     * Get 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
+     */
+    pub fn get_3d_state(&self) -> Result<bool, SdkErr> {
+        use self::sys::get_3d_state;
+        match unsafe {get_3d_state()} {
+            0 => Ok(false),
+            1 => Ok(true),
+            x => Err(x.into()),
+        }
     }
 }
 
