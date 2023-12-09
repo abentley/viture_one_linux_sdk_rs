@@ -2,7 +2,7 @@ use viture_rs::Sdk;
 
 fn main() {
     let Ok(sdk) = Sdk::init() else {
-        eprintln!("Failed to initialize");
+        eprintln!("Failed to initializee")
         return;
     };
     println!("{:?}", sdk);
