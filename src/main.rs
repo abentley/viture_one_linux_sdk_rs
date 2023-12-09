@@ -1,5 +1,5 @@
-use viture_rs::safe_init;
+use viture_rs::Sdk;
 
 fn main() {
-    println!("{}", safe_init());
+    println!("{:?}", Sdk::safe_init());
 }
