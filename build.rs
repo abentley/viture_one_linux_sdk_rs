@@ -2,8 +2,10 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    println!("cargo:rustc-link-lib=static=usb-1.0");
     println!("cargo:rustc-link-search=.");
-    println!("cargo:rustc-link-lib=viture_one_sdk");
+    println!("cargo:rustc-link-lib=static=viture_one_sdk");
+    println!("cargo:rustc-link-lib=dylib=udev");
 
     // Tell cargo to invalidate the built crate whenever the wrapper changes
     println!("cargo:rerun-if-changed=viture_wrapper.h");
