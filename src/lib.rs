@@ -49,11 +49,9 @@ pub use sys::SdkErr;
 
 use std::mem::{
     size_of,
-    transmute_copy,
 };
 use std::mem;
 
-#[repr(C)]
 #[derive(Debug)]
 struct ImuData {
     roll: f32,
@@ -61,13 +59,28 @@ struct ImuData {
     yaw: f32,
 }
 
+/**
+ * roll: +- 90 (pitch and yaw invert past 90 degrees)
+ * pitch: +- 180
+ * yaw: +- 180 (zero at connection time)
+ * ts: milliseconds since connected?  Monotonic?
+ */
+fn print_data(roll: f32, pitch: f32, yaw: f32, ts:u32) {
+    eprintln!("roll: {roll:.2} pitch {pitch:.2} yaw {yaw:.2} ts {ts}");
+}
+
 unsafe extern "C" fn imu_callback(data: *mut u8, len: u16, ts: u32) {
+    const pitch_offset:usize = size_of::<f32>();
+    const yaw_offset: usize = pitch_offset * 2;
+    const min_size: usize = pitch_offset * 3;
     eprintln!("len: {} ts: {}", len, ts);
-    if (len as usize) < size_of::<ImuData>() {
+    if (len as usize) < min_size {
         return
     }
-    let thing: &ImuData = mem::transmute(data);
-    eprintln!("data: {:?}", thing);
+    let roll = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data));
+    let pitch = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data.add(pitch_offset)));
+    let yaw = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data.add(yaw_offset)));
+    print_data(roll, pitch, yaw, ts);
 }
 
 
