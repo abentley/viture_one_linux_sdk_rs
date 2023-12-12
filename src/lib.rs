@@ -82,14 +82,14 @@ impl Sdk {
     /**
      * Set IMU state.  true: on, false: off
      */
-    pub fn set_imu(&self, on_off: bool) -> Result<(), SdkErr> {
+    pub fn set_imu(&mut self, on_off: bool) -> Result<(), SdkErr> {
         use self::sys::set_imu;
         unsafe { result_from_err(set_imu(on_off)) }
     }
     /**
      * Get IMU state.  true: on, false: off
      */
-    pub fn get_imu_state(&self) -> Result<bool, SdkErr> {
+    pub fn get_imu_state(&mut self) -> Result<bool, SdkErr> {
         use self::sys::get_imu_state;
         match unsafe {get_imu_state()} {
             0 => Ok(false),
@@ -100,14 +100,14 @@ impl Sdk {
     /**
      * Set 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
-    pub fn set_3d(&self, on_off: bool) -> Result<(), SdkErr> {
+    pub fn set_3d(&mut self, on_off: bool) -> Result<(), SdkErr> {
         use self::sys::set_3d;
         unsafe { result_from_err(set_3d(on_off)) }
     }
     /**
      * Get 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
-    pub fn get_3d_state(&self) -> Result<bool, SdkErr> {
+    pub fn get_3d_state(&mut self) -> Result<bool, SdkErr> {
         use self::sys::get_3d_state;
         match unsafe {get_3d_state()} {
             0 => Ok(false),
