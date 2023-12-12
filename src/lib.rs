@@ -47,10 +47,7 @@ pub mod sys {
 
 pub use sys::SdkErr;
 
-use std::mem::{
-    size_of,
-};
-use std::mem;
+use std::mem::size_of;
 
 #[derive(Debug)]
 struct ImuData {
@@ -65,24 +62,23 @@ struct ImuData {
  * yaw: +- 180 (zero at connection time)
  * ts: milliseconds since connected?  Monotonic?
  */
-fn print_data(roll: f32, pitch: f32, yaw: f32, ts:u32) {
+fn print_data(roll: f32, pitch: f32, yaw: f32, ts: u32) {
     eprintln!("roll: {roll:.2} pitch {pitch:.2} yaw {yaw:.2} ts {ts}");
 }
 
 unsafe extern "C" fn imu_callback(data: *mut u8, len: u16, ts: u32) {
-    const pitch_offset:usize = size_of::<f32>();
+    const pitch_offset: usize = size_of::<f32>();
     const yaw_offset: usize = pitch_offset * 2;
     const min_size: usize = pitch_offset * 3;
     eprintln!("len: {} ts: {}", len, ts);
     if (len as usize) < min_size {
-        return
+        return;
     }
-    let roll = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data));
-    let pitch = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data.add(pitch_offset)));
-    let yaw = f32::from_be_bytes(*mem::transmute::<*mut u8, &[u8; 4]>(data.add(yaw_offset)));
+    let roll = f32::from_be_bytes(*data.cast::<[u8; 4]>());
+    let pitch = f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>());
+    let yaw = f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>());
     print_data(roll, pitch, yaw, ts);
 }
-
 
 unsafe extern "C" fn mcu_callback(_: u16, _: *mut u8, _: u16, _: u32) {}
 
@@ -126,7 +122,7 @@ impl Sdk {
      */
     pub fn get_imu_state(&mut self) -> Result<bool, SdkErr> {
         use self::sys::get_imu_state;
-        match unsafe {get_imu_state()} {
+        match unsafe { get_imu_state() } {
             0 => Ok(false),
             1 => Ok(true),
             x => Err(x.into()),
@@ -144,7 +140,7 @@ impl Sdk {
      */
     pub fn get_3d_state(&mut self) -> Result<bool, SdkErr> {
         use self::sys::get_3d_state;
-        match unsafe {get_3d_state()} {
+        match unsafe { get_3d_state() } {
             0 => Ok(false),
             1 => Ok(true),
             x => Err(x.into()),
