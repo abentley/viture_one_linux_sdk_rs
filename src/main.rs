@@ -4,7 +4,8 @@ use viture_rs::Sdk;
 
 fn process_commands(sdk: &mut Sdk){
     let stdin = io::stdin();
-    println!("Available commands: 3d, 2d, quit");
+    println!("");
+    println!("Available commands: 3d, 2d, 3d-state, imu, imnotu, imu-state, quit");
     for line in stdin.lock().lines() {
         if let Ok(cmd) = line {
             match cmd.as_str() {

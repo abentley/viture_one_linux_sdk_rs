@@ -47,7 +47,29 @@ pub mod sys {
 
 pub use sys::SdkErr;
 
-unsafe extern "C" fn imu_callback(_: *mut u8, _: u16, _: u32) {}
+use std::mem::{
+    size_of,
+    transmute_copy,
+};
+use std::mem;
+
+#[repr(C)]
+#[derive(Debug)]
+struct ImuData {
+    roll: f32,
+    pitch: f32,
+    yaw: f32,
+}
+
+unsafe extern "C" fn imu_callback(data: *mut u8, len: u16, ts: u32) {
+    eprintln!("len: {} ts: {}", len, ts);
+    if (len as usize) < size_of::<ImuData>() {
+        return
+    }
+    let thing: &ImuData = mem::transmute(data);
+    eprintln!("data: {:?}", thing);
+}
+
 
 unsafe extern "C" fn mcu_callback(_: u16, _: *mut u8, _: u16, _: u32) {}
 
