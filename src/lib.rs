@@ -7,6 +7,7 @@ pub mod sys {
     #[derive(Debug, TryFromPrimitive)]
     #[repr(i32)]
     pub enum SdkErrCode {
+        // Exclude ERR_SUCCESS, because we want to use Result.
         Failure = ERR_FAILURE as i32,
         InvalidArgument = ERR_INVALID_ARGUMENT as i32,
         NotEnoughMemory = ERR_NOT_ENOUGH_MEMORY as i32,
