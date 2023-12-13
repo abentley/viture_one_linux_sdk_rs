@@ -56,11 +56,13 @@ struct ImuData {
     yaw: f32,
 }
 
-pub trait ImuCallback {
+pub trait CallbackImu {
     /// Normally, you should implement imu_message. imu_message may be inlined, and there is no
     /// dynamic call overhead..
     ///
-    /// data: 12 32-bit floats in big-endian format.
+    /// data: 12 32-bit floats in big-endian format: roll, pitch, yaw.  All remaining bytes
+    /// reserved.
+    ///
     /// len: The length of data
     /// ts: A timestamp.  (Since connected?  Monotonic?)
     ///
@@ -94,7 +96,11 @@ pub trait ImuCallback {
     fn imu_message(roll: f32, pitch: f32, yaw: f32, ts: u32);
 }
 
-unsafe extern "C" fn mcu_callback(_: u16, _: *mut u8, _: u16, _: u32) {}
+pub trait CallbackMcu {
+    unsafe extern "C" fn raw_mcu_message(msgid: u16, _data: *mut u8, len: u16, ts: u32) {
+        eprintln!("msgid: {msgid} len: {len} ts: {ts}")
+    }
+}
 
 fn result_from_err(discriminant: i32) -> Result<(), SdkErr> {
     let err: SdkErr = discriminant.into();
@@ -115,10 +121,10 @@ impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
-    pub fn init<T: ImuCallback>() -> Result<Self, ()> {
+    pub fn init<I: CallbackImu, M: CallbackMcu>() -> Result<Self, ()> {
         use self::sys::init;
         unsafe {
-            match init(Some(T::raw_imu_message), Some(mcu_callback)) {
+            match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
                 false => Err(()),
             }
