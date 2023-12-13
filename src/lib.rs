@@ -51,15 +51,33 @@ use std::mem::size_of;
 
 #[derive(Debug)]
 pub struct ImuData {
+    // +- 90 (past 90 degrees, pitch and yaw invert)
     pub roll: f32,
+    // +- 180
     pub pitch: f32,
+    // +- 180 (zero at connection time)
     pub yaw: f32,
 }
 
+/// Note: You should normally implement CallbackImu.  This is for cases where even converting the
+/// data is too expensive.
+pub trait RawCallbackImu {
+    /// # Safety
+    /// None
+    unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32);
+}
+
 pub trait CallbackImu {
-    /// Normally, you should implement imu_message. imu_message may be inlined, and there is no
-    /// dynamic call overhead..
-    ///
+    /**
+     * A function that will be called for every IMU message received.
+     *
+     * data: an IMUData object
+     * ts: milliseconds since connected?  Monotonic?
+     */
+    fn imu_message(data: &ImuData, ts: u32);
+}
+
+impl<T: CallbackImu> RawCallbackImu for T {
     /// data: 12 32-bit floats in big-endian format: roll, pitch, yaw.  All remaining bytes
     /// reserved.
     ///
@@ -86,16 +104,8 @@ pub trait CallbackImu {
         };
         Self::imu_message(&data, ts);
     }
-    /**
-     * A function that will be called for every IMU message received.
-     *
-     * roll: +- 90 (pitch and yaw invert past 90 degrees)
-     * pitch: +- 180
-     * yaw: +- 180 (zero at connection time)
-     * ts: milliseconds since connected?  Monotonic?
-     */
-    fn imu_message(data: &ImuData, ts: u32);
 }
+
 
 pub trait CallbackMcu {
     /// # Safety
@@ -124,7 +134,7 @@ impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
-    pub fn init<I: CallbackImu, M: CallbackMcu>() -> Result<Self, ()> {
+    pub fn init<I: RawCallbackImu, M: CallbackMcu>() -> Result<Self, ()> {
         use self::sys::init;
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
