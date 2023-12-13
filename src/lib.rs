@@ -56,28 +56,42 @@ struct ImuData {
     yaw: f32,
 }
 
-/**
- * roll: +- 90 (pitch and yaw invert past 90 degrees)
- * pitch: +- 180
- * yaw: +- 180 (zero at connection time)
- * ts: milliseconds since connected?  Monotonic?
- */
-fn print_data(roll: f32, pitch: f32, yaw: f32, ts: u32) {
-    eprintln!("roll: {roll:.2} pitch {pitch:.2} yaw {yaw:.2} ts {ts}");
-}
-
-unsafe extern "C" fn imu_callback(data: *mut u8, len: u16, ts: u32) {
-    const pitch_offset: usize = size_of::<f32>();
-    const yaw_offset: usize = pitch_offset * 2;
-    const min_size: usize = pitch_offset * 3;
-    eprintln!("len: {} ts: {}", len, ts);
-    if (len as usize) < min_size {
-        return;
+pub trait ImuCallback {
+    /// Normally, you should implement imu_message. imu_message may be inlined, and there is no
+    /// dynamic call overhead..
+    ///
+    /// data: 12 32-bit floats in big-endian format.
+    /// len: The length of data
+    /// ts: A timestamp.  (Since connected?  Monotonic?)
+    ///
+    /// # Safety
+    /// We copy the contents of data, we don't pass it down to safe functions
+    /// We check that len >= min_size.
+    /// We check that data is not null.
+    /// It is possible that data is invalid in some other way, but there's no clear solution for
+    /// that.
+    unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32) {
+        const pitch_offset: usize = size_of::<f32>();
+        const yaw_offset: usize = pitch_offset * 2;
+        const min_size: usize = pitch_offset * 3;
+        eprintln!("len: {} ts: {}", len, ts);
+        if data.is_null() || (len as usize) < min_size {
+            return;
+        }
+        let roll = f32::from_be_bytes(*data.cast::<[u8; 4]>());
+        let pitch = f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>());
+        let yaw = f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>());
+        Self::imu_message(roll, pitch, yaw, ts);
     }
-    let roll = f32::from_be_bytes(*data.cast::<[u8; 4]>());
-    let pitch = f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>());
-    let yaw = f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>());
-    print_data(roll, pitch, yaw, ts);
+    /**
+     * A function that will be called for every IMU message received.
+     *
+     * roll: +- 90 (pitch and yaw invert past 90 degrees)
+     * pitch: +- 180
+     * yaw: +- 180 (zero at connection time)
+     * ts: milliseconds since connected?  Monotonic?
+     */
+    fn imu_message(roll: f32, pitch: f32, yaw: f32, ts: u32);
 }
 
 unsafe extern "C" fn mcu_callback(_: u16, _: *mut u8, _: u16, _: u32) {}
@@ -101,10 +115,10 @@ impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
-    pub fn init() -> Result<Self, ()> {
+    pub fn init<T: ImuCallback>() -> Result<Self, ()> {
         use self::sys::init;
         unsafe {
-            match init(Some(imu_callback), Some(mcu_callback)) {
+            match init(Some(T::raw_imu_message), Some(mcu_callback)) {
                 true => Ok(Self {}),
                 false => Err(()),
             }

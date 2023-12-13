@@ -1,6 +1,15 @@
 use std::io;
 use std::io::BufRead;
+use viture_rs::ImuCallback;
 use viture_rs::Sdk;
+
+pub struct Printer {}
+
+impl ImuCallback for Printer {
+    fn imu_message(roll: f32, pitch: f32, yaw: f32, ts: u32) {
+        eprintln!("roll: {roll:.2} pitch {pitch:.2} yaw {yaw:.2} ts {ts}");
+    }
+}
 
 fn process_commands(sdk: &mut Sdk) {
     let stdin = io::stdin();
@@ -40,7 +49,7 @@ fn process_commands(sdk: &mut Sdk) {
 
 fn main() {
     eprint!("Initializing...");
-    let Ok(mut sdk) = Sdk::init() else {
+    let Ok(mut sdk) = Sdk::init::<Printer>() else {
         eprintln!(" failed to initialize");
         return;
     };
