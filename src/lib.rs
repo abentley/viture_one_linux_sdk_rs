@@ -134,12 +134,12 @@ impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
-    pub fn init<I: RawCallbackImu, M: CallbackMcu>() -> Result<Self, ()> {
+    pub fn init<I: RawCallbackImu, M: CallbackMcu>() -> Result<Self, SdkErr> {
         use self::sys::init;
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
-                false => Err(()),
+                false => Err(SdkErr::Failure),
             }
         }
     }
