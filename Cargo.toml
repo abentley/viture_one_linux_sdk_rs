@@ -10,3 +10,4 @@ build = "build.rs"
 bindgen = "0.65.1"
 
 [dependencies]
+num_enum = "0.7.1"

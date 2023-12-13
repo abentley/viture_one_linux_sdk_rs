@@ -2,11 +2,11 @@
 #![allow(non_camel_case_types)]
 
 pub mod sys {
+    use num_enum::TryFromPrimitive;
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-    #[derive(Debug)]
+    #[derive(Debug, TryFromPrimitive)]
     #[repr(i32)]
-    pub enum SdkErr {
-        Success = ERR_SUCCESS as i32,
+    pub enum SdkErrCode {
         Failure = ERR_FAILURE as i32,
         InvalidArgument = ERR_INVALID_ARGUMENT as i32,
         NotEnoughMemory = ERR_NOT_ENOUGH_MEMORY as i32,
@@ -19,33 +19,25 @@ pub mod sys {
         WriteFailure = ERR_WRITE_FAIL,
         RspError = ERR_RSP_ERROR,
         Timeout = ERR_TIMEOUT,
-        UnknownErr(i32) = 255,
-    }
-    impl From<i32> for SdkErr {
-        fn from(discriminant: i32) -> Self {
-            use SdkErr::*;
-            match discriminant {
-                ERR_WRITE_FAIL => WriteFailure,
-                ERR_RSP_ERROR => RspError,
-                ERR_TIMEOUT => Timeout,
-                _ => match discriminant as u32 {
-                    ERR_FAILURE => Failure,
-                    ERR_INVALID_ARGUMENT => InvalidArgument,
-                    ERR_NOT_ENOUGH_MEMORY => NotEnoughMemory,
-                    ERR_UNSUPPORTED_CMD => UnsupportedCommand,
-                    ERR_CRC_MISMATCH => CrcMismatch,
-                    ERR_VER_MISMATCH => VersionMismatch,
-                    ERR_MSG_ID_MISMATCH => MessageIdMismatch,
-                    ERR_MSG_STX_MISMATCH => MessageStxMismatch,
-                    ERR_CODE_NOT_WRITTEN => CodeNotWritten,
-                    _ => UnknownErr(discriminant),
-                },
-            }
-        }
     }
 }
 
-pub use sys::SdkErr;
+/// Return value indicating success
+const ERR_SUCCESS: i32 = sys::ERR_SUCCESS as i32;
+
+#[derive(Debug)]
+pub enum SdkErr {
+    SdkErrCode(SdkErrCode),
+    UnknownCode(i32),
+}
+
+impl From<SdkErrCode> for SdkErr {
+    fn from(code: SdkErrCode) -> SdkErr {
+        SdkErr::SdkErrCode(code)
+    }
+}
+
+pub use sys::SdkErrCode;
 
 use std::mem::size_of;
 
@@ -106,7 +98,6 @@ impl<T: CallbackImu> RawCallbackImu for T {
     }
 }
 
-
 pub trait CallbackMcu {
     /// # Safety
     /// Does nothing.
@@ -115,12 +106,13 @@ pub trait CallbackMcu {
     }
 }
 
-fn result_from_err(discriminant: i32) -> Result<(), SdkErr> {
-    let err: SdkErr = discriminant.into();
-    if let SdkErr::UnknownErr(0) = err {
-        Ok(())
-    } else {
-        Err(err)
+impl From<i32> for SdkErr {
+    fn from(discriminant: i32) -> SdkErr {
+        if let Ok(err) = SdkErrCode::try_from(discriminant) {
+            err.into()
+        } else {
+            SdkErr::UnknownCode(discriminant)
+        }
     }
 }
 
@@ -139,7 +131,7 @@ impl Sdk {
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
-                false => Err(SdkErr::Failure),
+                false => Err(SdkErrCode::Failure.into()),
             }
         }
     }
@@ -148,7 +140,12 @@ impl Sdk {
      */
     pub fn set_imu(&mut self, on_off: bool) -> Result<(), SdkErr> {
         use self::sys::set_imu;
-        unsafe { result_from_err(set_imu(on_off)) }
+        let result = unsafe { set_imu(on_off) };
+        if result == ERR_SUCCESS {
+            Ok(())
+        } else {
+            Err(result.into())
+        }
     }
     /**
      * Get IMU state.  true: on, false: off
@@ -166,7 +163,12 @@ impl Sdk {
      */
     pub fn set_3d(&mut self, on_off: bool) -> Result<(), SdkErr> {
         use self::sys::set_3d;
-        unsafe { result_from_err(set_3d(on_off)) }
+        let result = unsafe { set_3d(on_off) };
+        if result == ERR_SUCCESS {
+            Ok(())
+        } else {
+            Err(result.into())
+        }
     }
     /**
      * Get 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
