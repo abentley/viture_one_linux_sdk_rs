@@ -67,7 +67,7 @@ pub trait CallbackImu {
      * data: an IMUData object
      * ts: milliseconds since connected?  Monotonic?
      */
-    fn imu_message(data: &ImuData, ts: u32);
+    fn imu_message(data: ImuData, ts: u32);
 }
 
 impl<T: CallbackImu> RawCallbackImu for T {
@@ -95,7 +95,7 @@ impl<T: CallbackImu> RawCallbackImu for T {
             pitch: f32::from_be_bytes(*data.add(PITCH_OFFSET).cast::<[u8; 4]>()),
             yaw: f32::from_be_bytes(*data.add(YAW_OFFSET).cast::<[u8; 4]>()),
         };
-        Self::imu_message(&data, ts);
+        Self::imu_message(data, ts);
     }
 }
 

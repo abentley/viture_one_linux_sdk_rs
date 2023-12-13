@@ -5,7 +5,7 @@ use viture_rs::{CallbackImu, CallbackMcu, ImuData, Sdk};
 pub struct Printer {}
 
 impl CallbackImu for Printer {
-    fn imu_message(data: &ImuData, ts: u32) {
+    fn imu_message(data: ImuData, ts: u32) {
         eprintln!(
             "roll: {:.2} pitch {:.2} yaw {:.2} ts {ts}",
             data.roll, data.pitch, data.yaw
