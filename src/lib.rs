@@ -1,7 +1,7 @@
-#![allow(non_upper_case_globals)]
-#![allow(non_camel_case_types)]
-
 pub mod sys {
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+
     use num_enum::TryFromPrimitive;
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
     #[derive(Debug, TryFromPrimitive)]
@@ -79,21 +79,21 @@ impl<T: CallbackImu> RawCallbackImu for T {
     ///
     /// # Safety
     /// We copy the contents of data, we don't pass it down to safe functions
-    /// We check that len >= min_size.
+    /// We check that len >= MIN_SIZE.
     /// We check that data is not null.
     /// It is possible that data is invalid in some other way, but we can't know in advance.
     unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32) {
-        const pitch_offset: usize = size_of::<f32>();
-        const yaw_offset: usize = pitch_offset * 2;
-        const min_size: usize = pitch_offset * 3;
+        const PITCH_OFFSET: usize = size_of::<f32>();
+        const YAW_OFFSET: usize = PITCH_OFFSET * 2;
+        const MIN_SIZE: usize = PITCH_OFFSET * 3;
         eprintln!("len: {} ts: {}", len, ts);
-        if data.is_null() || (len as usize) < min_size {
+        if data.is_null() || (len as usize) < MIN_SIZE {
             return;
         }
         let data = ImuData {
             roll: f32::from_be_bytes(*data.cast::<[u8; 4]>()),
-            pitch: f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>()),
-            yaw: f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>()),
+            pitch: f32::from_be_bytes(*data.add(PITCH_OFFSET).cast::<[u8; 4]>()),
+            yaw: f32::from_be_bytes(*data.add(YAW_OFFSET).cast::<[u8; 4]>()),
         };
         Self::imu_message(&data, ts);
     }
