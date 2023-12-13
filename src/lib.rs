@@ -50,10 +50,10 @@ pub use sys::SdkErr;
 use std::mem::size_of;
 
 #[derive(Debug)]
-struct ImuData {
-    roll: f32,
-    pitch: f32,
-    yaw: f32,
+pub struct ImuData {
+    pub roll: f32,
+    pub pitch: f32,
+    pub yaw: f32,
 }
 
 pub trait CallbackImu {
@@ -70,8 +70,7 @@ pub trait CallbackImu {
     /// We copy the contents of data, we don't pass it down to safe functions
     /// We check that len >= min_size.
     /// We check that data is not null.
-    /// It is possible that data is invalid in some other way, but there's no clear solution for
-    /// that.
+    /// It is possible that data is invalid in some other way, but we can't know in advance.
     unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32) {
         const pitch_offset: usize = size_of::<f32>();
         const yaw_offset: usize = pitch_offset * 2;
@@ -80,10 +79,12 @@ pub trait CallbackImu {
         if data.is_null() || (len as usize) < min_size {
             return;
         }
-        let roll = f32::from_be_bytes(*data.cast::<[u8; 4]>());
-        let pitch = f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>());
-        let yaw = f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>());
-        Self::imu_message(roll, pitch, yaw, ts);
+        let data = ImuData {
+            roll: f32::from_be_bytes(*data.cast::<[u8; 4]>()),
+            pitch: f32::from_be_bytes(*data.add(pitch_offset).cast::<[u8; 4]>()),
+            yaw: f32::from_be_bytes(*data.add(yaw_offset).cast::<[u8; 4]>()),
+        };
+        Self::imu_message(&data, ts);
     }
     /**
      * A function that will be called for every IMU message received.
@@ -93,10 +94,12 @@ pub trait CallbackImu {
      * yaw: +- 180 (zero at connection time)
      * ts: milliseconds since connected?  Monotonic?
      */
-    fn imu_message(roll: f32, pitch: f32, yaw: f32, ts: u32);
+    fn imu_message(data: &ImuData, ts: u32);
 }
 
 pub trait CallbackMcu {
+    /// # Safety
+    /// Does nothing.
     unsafe extern "C" fn raw_mcu_message(msgid: u16, _data: *mut u8, len: u16, ts: u32) {
         eprintln!("msgid: {msgid} len: {len} ts: {ts}")
     }

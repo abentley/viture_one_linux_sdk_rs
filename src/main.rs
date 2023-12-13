@@ -1,17 +1,19 @@
 use std::io;
 use std::io::BufRead;
-use viture_rs::{CallbackImu, CallbackMcu, Sdk};
+use viture_rs::{CallbackImu, CallbackMcu, ImuData, Sdk};
 
 pub struct Printer {}
 
 impl CallbackImu for Printer {
-    fn imu_message(roll: f32, pitch: f32, yaw: f32, ts: u32) {
-        eprintln!("roll: {roll:.2} pitch {pitch:.2} yaw {yaw:.2} ts {ts}");
+    fn imu_message(data: &ImuData, ts: u32) {
+        eprintln!(
+            "roll: {:.2} pitch {:.2} yaw {:.2} ts {ts}",
+            data.roll, data.pitch, data.yaw
+        );
     }
 }
 
-impl CallbackMcu for Printer {
-}
+impl CallbackMcu for Printer {}
 
 fn process_commands(sdk: &mut Sdk) {
     let stdin = io::stdin();
