@@ -1,37 +1,5 @@
-pub mod sys {
-    #![allow(non_upper_case_globals)]
-    #![allow(non_camel_case_types)]
-
-    use num_enum::TryFromPrimitive;
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-    #[derive(Debug, TryFromPrimitive)]
-    #[repr(i32)]
-    pub enum SdkErrCode {
-        // Exclude ERR_SUCCESS, because we want to use Result.
-        Failure = ERR_FAILURE as i32,
-        InvalidArgument = ERR_INVALID_ARGUMENT as i32,
-        NotEnoughMemory = ERR_NOT_ENOUGH_MEMORY as i32,
-        UnsupportedCommand = ERR_UNSUPPORTED_CMD as i32,
-        CrcMismatch = ERR_CRC_MISMATCH as i32,
-        VersionMismatch = ERR_VER_MISMATCH as i32,
-        MessageIdMismatch = ERR_MSG_ID_MISMATCH as i32,
-        MessageStxMismatch = ERR_MSG_STX_MISMATCH as i32,
-        CodeNotWritten = ERR_CODE_NOT_WRITTEN as i32,
-        WriteFailure = ERR_WRITE_FAIL,
-        RspError = ERR_RSP_ERROR,
-        Timeout = ERR_TIMEOUT,
-    }
-    /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
-    /// data is too expensive.
-    pub trait RawCallbackImu {
-        /// # Safety
-        /// None
-        unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32);
-    }
-}
-
 /// Return value indicating success
-const ERR_SUCCESS: i32 = sys::ERR_SUCCESS as i32;
+const ERR_SUCCESS: i32 = viture_one_sdk_sys::ERR_SUCCESS as i32;
 
 #[derive(Debug)]
 pub enum SdkErr {
@@ -45,7 +13,15 @@ impl From<SdkErrCode> for SdkErr {
     }
 }
 
-pub use sys::{RawCallbackImu, SdkErrCode};
+use viture_one_sdk_sys::{SdkErrCode};
+
+/// Note: You should normally implement CallbackImu.  This is for cases where even converting the
+/// data is too expensive.
+pub trait RawCallbackImu {
+    /// # Safety
+    /// None
+    unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32);
+}
 
 use std::mem::size_of;
 
@@ -134,7 +110,7 @@ impl Sdk {
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
     pub fn raw_init<I: RawCallbackImu, M: RawCallbackMcu>() -> Result<Self, SdkErr> {
-        use self::sys::init;
+        use viture_one_sdk_sys::init;
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
@@ -151,7 +127,7 @@ impl Sdk {
      * Set IMU state.  true: on, false: off
      */
     pub fn set_imu(&mut self, on_off: bool) -> Result<(), SdkErr> {
-        use self::sys::set_imu;
+        use viture_one_sdk_sys::set_imu;
         let result = unsafe { set_imu(on_off) };
         if result == ERR_SUCCESS {
             Ok(())
@@ -163,7 +139,7 @@ impl Sdk {
      * Get IMU state.  true: on, false: off
      */
     pub fn get_imu_state(&mut self) -> Result<bool, SdkErr> {
-        use self::sys::get_imu_state;
+        use viture_one_sdk_sys::get_imu_state;
         match unsafe { get_imu_state() } {
             0 => Ok(false),
             1 => Ok(true),
@@ -174,7 +150,7 @@ impl Sdk {
      * Set 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
     pub fn set_3d(&mut self, on_off: bool) -> Result<(), SdkErr> {
-        use self::sys::set_3d;
+        use viture_one_sdk_sys::set_3d;
         let result = unsafe { set_3d(on_off) };
         if result == ERR_SUCCESS {
             Ok(())
@@ -186,7 +162,7 @@ impl Sdk {
      * Get 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
     pub fn get_3d_state(&mut self) -> Result<bool, SdkErr> {
-        use self::sys::get_3d_state;
+        use viture_one_sdk_sys::get_3d_state;
         match unsafe { get_3d_state() } {
             0 => Ok(false),
             1 => Ok(true),
@@ -197,7 +173,7 @@ impl Sdk {
 
 impl Drop for Sdk {
     fn drop(&mut self) {
-        use self::sys::deinit;
+        use viture_one_sdk_sys::deinit;
         unsafe { deinit() };
     }
 }

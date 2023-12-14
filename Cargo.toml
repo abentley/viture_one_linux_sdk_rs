@@ -1,3 +1,3 @@
 [workspace]
-members = ["viture_one_sdk"]
+members = ["viture_one_sdk", "viture-one-sdk-sys"]
 resolver = "2"

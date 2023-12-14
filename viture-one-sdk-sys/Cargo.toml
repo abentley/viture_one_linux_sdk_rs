@@ -1,5 +1,5 @@
 [package]
-name = "viture_rs"
+name = "viture-one-sdk-sys"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
@@ -10,4 +10,4 @@ build = "build.rs"
 bindgen = "0.65.1"
 
 [dependencies]
-viture-one-sdk-sys = {path="../viture-one-sdk-sys"}
+num_enum = "0.7.1"
