@@ -2,12 +2,8 @@
 name = "viture_rs"
 version = "0.1.0"
 edition = "2021"
-build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[build-dependencies]
-bindgen = "0.65.1"
 
 [dependencies]
 viture-one-sdk-sys = {path="../viture-one-sdk-sys"}
