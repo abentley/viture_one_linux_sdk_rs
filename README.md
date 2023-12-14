@@ -1,7 +1,7 @@
 These are Rust bindings for the Viture One Linux C SDK.  They were developed
 and tested on Ubuntu 22.04.
 
-They require `viture_one_linux_sdk_1.0.2` to exist as a neighbour directory.
+They require `viture_one_linux_sdk` to exist as a neighbour directory (used for both header and .so).
 
 They require libusb-1.0-0-dev and libudev-dev installed.  (libusb gets statically linked).
 
