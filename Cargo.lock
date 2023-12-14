@@ -347,18 +347,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
+name = "viture-one-sdk"
+version = "0.1.0"
+dependencies = [
+ "viture-one-sdk-sys",
+]
+
+[[package]]
 name = "viture-one-sdk-sys"
 version = "0.1.0"
 dependencies = [
  "bindgen",
  "num_enum",
-]
-
-[[package]]
-name = "viture_rs"
-version = "0.1.0"
-dependencies = [
- "viture-one-sdk-sys",
 ]
 
 [[package]]

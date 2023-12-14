@@ -1,6 +1,6 @@
 use std::io;
 use std::io::BufRead;
-use viture_rs::{CallbackImu, ImuData, Sdk};
+use viture_one_sdk::{CallbackImu, ImuData, Sdk};
 
 pub struct Printer {}
 
