@@ -21,6 +21,13 @@ pub mod sys {
         RspError = ERR_RSP_ERROR,
         Timeout = ERR_TIMEOUT,
     }
+    /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
+    /// data is too expensive.
+    pub trait RawCallbackImu {
+        /// # Safety
+        /// None
+        unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32);
+    }
 }
 
 /// Return value indicating success
@@ -38,7 +45,7 @@ impl From<SdkErrCode> for SdkErr {
     }
 }
 
-pub use sys::SdkErrCode;
+pub use sys::{RawCallbackImu, SdkErrCode};
 
 use std::mem::size_of;
 
@@ -50,14 +57,6 @@ pub struct ImuData {
     pub pitch: f32,
     // +- 180 (zero at connection time)
     pub yaw: f32,
-}
-
-/// Note: You should normally implement CallbackImu.  This is for cases where even converting the
-/// data is too expensive.
-pub trait RawCallbackImu {
-    /// # Safety
-    /// None
-    unsafe extern "C" fn raw_imu_message(data: *mut u8, len: u16, ts: u32);
 }
 
 pub trait CallbackImu {
@@ -86,7 +85,6 @@ impl<T: CallbackImu> RawCallbackImu for T {
         const PITCH_OFFSET: usize = size_of::<f32>();
         const YAW_OFFSET: usize = PITCH_OFFSET * 2;
         const MIN_SIZE: usize = PITCH_OFFSET * 3;
-        eprintln!("len: {} ts: {}", len, ts);
         if data.is_null() || (len as usize) < MIN_SIZE {
             return;
         }
@@ -99,7 +97,15 @@ impl<T: CallbackImu> RawCallbackImu for T {
     }
 }
 
-pub trait CallbackMcu {
+pub trait RawCallbackMcu {
+    /// # Safety
+    /// Does nothing.
+    unsafe extern "C" fn raw_mcu_message(msgid: u16, _data: *mut u8, len: u16, ts: u32);
+}
+
+struct Noop {}
+
+impl RawCallbackMcu for Noop {
     /// # Safety
     /// Does nothing.
     unsafe extern "C" fn raw_mcu_message(msgid: u16, _data: *mut u8, len: u16, ts: u32) {
@@ -127,7 +133,7 @@ impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
      */
-    pub fn init<I: RawCallbackImu, M: CallbackMcu>() -> Result<Self, SdkErr> {
+    pub fn raw_init<I: RawCallbackImu, M: RawCallbackMcu>() -> Result<Self, SdkErr> {
         use self::sys::init;
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
@@ -136,6 +142,11 @@ impl Sdk {
             }
         }
     }
+
+    pub fn init<I: CallbackImu>() -> Result<Self, SdkErr> {
+        Self::raw_init::<I, Noop>()
+    }
+
     /**
      * Set IMU state.  true: on, false: off
      */

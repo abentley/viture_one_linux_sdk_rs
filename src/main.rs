@@ -1,24 +1,26 @@
 use std::io;
 use std::io::BufRead;
-use viture_rs::{CallbackImu, CallbackMcu, ImuData, Sdk};
+use viture_rs::{CallbackImu, ImuData, Sdk};
 
 pub struct Printer {}
 
 impl CallbackImu for Printer {
     fn imu_message(data: ImuData, ts: u32) {
-        eprintln!(
-            "roll: {:.2} pitch {:.2} yaw {:.2} ts {ts}",
+        eprint!(
+            "\rroll: {:>7.2} pitch {:>7.2} yaw {:>7.2} ts {ts}",
             data.roll, data.pitch, data.yaw
         );
     }
 }
 
-impl CallbackMcu for Printer {}
+fn help() {
+    println!("Available commands: 3d, 2d, 3d-state, imu, imnotu, imu-state, quit");
+}
 
 fn process_commands(sdk: &mut Sdk) {
     let stdin = io::stdin();
     println!();
-    println!("Available commands: 3d, 2d, 3d-state, imu, imnotu, imu-state, quit");
+    help();
     for line in stdin.lock().lines().flatten() {
         match line.as_str() {
             "3d" => {
@@ -35,13 +37,21 @@ fn process_commands(sdk: &mut Sdk) {
             "imu" => {
                 println!("Engaging IMU");
                 sdk.set_imu(true).unwrap();
+                eprintln!();
             }
             "imnotu" => {
                 println!("Disengaging IMU");
                 sdk.set_imu(false).unwrap();
+                eprintln!();
             }
             "imu-state" => {
                 println!("imu state: {}", sdk.get_imu_state().unwrap())
+            }
+            "help" => {
+                help()
+            }
+            "?" => {
+                help()
             }
             "quit" => return,
             cmd => {
@@ -53,8 +63,8 @@ fn process_commands(sdk: &mut Sdk) {
 
 fn main() {
     eprint!("Initializing...");
-    let Ok(mut sdk) = Sdk::init::<Printer, Printer>() else {
-        eprintln!(" failed to initialize");
+    let Ok(mut sdk) = Sdk::init::<Printer>() else {
+        eprintln!(" failed to initialize.  Make sure to run this as root.");
         return;
     };
     eprintln!(" succeeded");
