@@ -13,7 +13,7 @@ impl From<SdkErrCode> for SdkErr {
     }
 }
 
-use viture_one_sdk_sys::{SdkErrCode};
+use viture_one_sdk_sys::SdkErrCode;
 
 /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
 /// data is too expensive.

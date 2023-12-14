@@ -47,12 +47,8 @@ fn process_commands(sdk: &mut Sdk) {
             "imu-state" => {
                 println!("imu state: {}", sdk.get_imu_state().unwrap())
             }
-            "help" => {
-                help()
-            }
-            "?" => {
-                help()
-            }
+            "help" => help(),
+            "?" => help(),
             "quit" => return,
             cmd => {
                 println!("Unknown command: {}", cmd);

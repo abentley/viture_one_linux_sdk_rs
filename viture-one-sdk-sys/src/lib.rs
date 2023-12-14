@@ -20,4 +20,3 @@ pub enum SdkErrCode {
     RspError = ERR_RSP_ERROR,
     Timeout = ERR_TIMEOUT,
 }
-
