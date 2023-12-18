@@ -1,9 +1,13 @@
-/// Return value indicating success
+// Return value indicating success
 const ERR_SUCCESS: i32 = viture_one_sdk_sys::ERR_SUCCESS as i32;
 
+/// Error type
 #[derive(Debug)]
 pub enum SdkErr {
+    /// Error codes in the range supported by the Sdk
     SdkErrCode(SdkErrCode),
+
+    /// Error codes outside the range supported by the Sdk (and also 0 for success)
     UnknownCode(i32),
 }
 
@@ -35,16 +39,18 @@ pub struct ImuData {
     pub yaw: f32,
 }
 
+/// Callback that receives IMU data as f32 floats
 pub trait CallbackImu {
     /**
      * A function that will be called for every IMU message received.
      *
-     * data: an IMUData object
+     * data: an ImuData object
      * ts: milliseconds since connected?  Monotonic?
      */
     fn imu_message(data: ImuData, ts: u32);
 }
 
+/// Callback that receives raw IMU data
 impl<T: CallbackImu> RawCallbackImu for T {
     /// data: 12 32-bit floats in big-endian format: roll, pitch, yaw.  All remaining bytes
     /// reserved.
@@ -73,12 +79,14 @@ impl<T: CallbackImu> RawCallbackImu for T {
     }
 }
 
+/// Callback that should receive events, but currently doesn't.
 pub trait RawCallbackMcu {
     /// # Safety
     /// Does nothing.
     unsafe extern "C" fn raw_mcu_message(msgid: u16, _data: *mut u8, len: u16, ts: u32);
 }
 
+/// No-op callback for MCU
 struct Noop {}
 
 impl RawCallbackMcu for Noop {
@@ -108,6 +116,7 @@ pub struct Sdk {}
 impl Sdk {
     /**
      * Initialize the usblib and return an Sdk object to interact with the glasses.
+     * Use raw callbacks.
      */
     pub fn raw_init<I: RawCallbackImu, M: RawCallbackMcu>() -> Result<Self, SdkErr> {
         use viture_one_sdk_sys::init;
@@ -119,6 +128,10 @@ impl Sdk {
         }
     }
 
+    /**
+     * Initialize the usblib and return an Sdk object to interact with the glasses.
+     * Use a safe Imu callback.
+     */
     pub fn init<I: CallbackImu>() -> Result<Self, SdkErr> {
         Self::raw_init::<I, Noop>()
     }
