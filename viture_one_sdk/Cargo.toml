@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 viture-one-sdk-sys = {path="../viture-one-sdk-sys"}
+num_enum = "0.7.1"

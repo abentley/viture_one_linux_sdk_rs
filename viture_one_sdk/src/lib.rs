@@ -1,26 +1,75 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::ffi::c_int;
 
 // Return value indicating success
 const ERR_SUCCESS: c_int = viture_one_sdk_sys::ERR_SUCCESS as c_int;
 
+#[derive(Debug, TryFromPrimitive)]
+#[repr(i32)]
+/// Recognized error codes for SdkErr
+pub enum GeneralErrCode {
+    WriteFailure = ERR_WRITE_FAIL,
+    RspError = ERR_RSP_ERROR,
+    Timeout = ERR_TIMEOUT,
+}
+
+#[derive(Debug, TryFromPrimitive)]
+#[repr(u32)]
+/// Recognized error codes for SdkErr
+pub enum MessageErrCode {
+    // Exclude ERR_SUCCESS, because we want to use Result.
+    Failure = ERR_FAILURE,
+    InvalidArgument = ERR_INVALID_ARGUMENT,
+    NotEnoughMemory = ERR_NOT_ENOUGH_MEMORY,
+    UnsupportedCommand = ERR_UNSUPPORTED_CMD,
+    CrcMismatch = ERR_CRC_MISMATCH,
+    VersionMismatch = ERR_VER_MISMATCH,
+    MessageIdMismatch = ERR_MSG_ID_MISMATCH,
+    MessageStxMismatch = ERR_MSG_STX_MISMATCH,
+    CodeNotWritten = ERR_CODE_NOT_WRITTEN,
+}
+
 /// Error type
 #[derive(Debug)]
 pub enum SdkErr {
-    /// Error codes in the range supported by the Sdk
-    SdkErrCode(SdkErrCode),
+    /// Negative error codes are general
+    GeneralErrCode(GeneralErrCode),
+
+    /// Message Error codes are positive and overlap with other return values
+    MessageErrCode(MessageErrCode),
 
     /// Error codes outside the range supported by the Sdk (and also 0 for success)
     UnknownCode(c_int),
 }
 
-impl From<SdkErrCode> for SdkErr {
-    fn from(code: SdkErrCode) -> SdkErr {
-        SdkErr::SdkErrCode(code)
+impl From<MessageErrCode> for SdkErr {
+    fn from(code: MessageErrCode) -> SdkErr {
+        SdkErr::MessageErrCode(code)
     }
 }
 
-use viture_one_sdk_sys::{SdkErrCode};
-pub use viture_one_sdk_sys::ImuFrequency;
+impl From<GeneralErrCode> for SdkErr {
+    fn from(code: GeneralErrCode) -> SdkErr {
+        SdkErr::GeneralErrCode(code)
+    }
+}
+
+use viture_one_sdk_sys::{
+    ERR_CODE_NOT_WRITTEN, ERR_CRC_MISMATCH, ERR_FAILURE, ERR_INVALID_ARGUMENT, ERR_MSG_ID_MISMATCH,
+    ERR_MSG_STX_MISMATCH, ERR_NOT_ENOUGH_MEMORY, ERR_RSP_ERROR, ERR_TIMEOUT, ERR_UNSUPPORTED_CMD,
+    ERR_VER_MISMATCH, ERR_WRITE_FAIL, IMU_FREQUENCE_120, IMU_FREQUENCE_240, IMU_FREQUENCE_60,
+    IMU_FREQUENCE_90,
+};
+
+#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+#[repr(i32)]
+/// Frequencies that the IMU can run at.
+pub enum ImuFrequency {
+    Hz60 = IMU_FREQUENCE_60 as c_int,
+    Hz90 = IMU_FREQUENCE_90 as c_int,
+    Hz120 = IMU_FREQUENCE_120 as c_int,
+    Hz240 = IMU_FREQUENCE_240 as c_int,
+}
 
 /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
 /// data is too expensive.
@@ -102,7 +151,9 @@ impl RawCallbackMcu for Noop {
 
 impl From<c_int> for SdkErr {
     fn from(discriminant: c_int) -> SdkErr {
-        if let Ok(err) = SdkErrCode::try_from(discriminant) {
+        if let Ok(err) = GeneralErrCode::try_from(discriminant) {
+            err.into()
+        } else if let Ok(err) = MessageErrCode::try_from(discriminant as u32) {
             err.into()
         } else {
             SdkErr::UnknownCode(discriminant)
@@ -126,7 +177,7 @@ impl Sdk {
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
-                false => Err(SdkErrCode::Failure.into()),
+                false => Err(MessageErrCode::Failure.into()),
             }
         }
     }
@@ -182,7 +233,7 @@ impl Sdk {
         if fq < 0 {
             Err(SdkErr::from(fq))
         } else {
-            ImuFrequency::try_from(fq).map_err(|e|SdkErr::UnknownCode(e.number))
+            ImuFrequency::try_from(fq).map_err(|e| SdkErr::UnknownCode(e.number))
         }
     }
 
