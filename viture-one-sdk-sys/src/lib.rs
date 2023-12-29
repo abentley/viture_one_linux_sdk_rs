@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-use num_enum::TryFromPrimitive;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::ffi::c_int;
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 #[derive(Debug, TryFromPrimitive)]
@@ -22,7 +22,7 @@ pub enum SdkErrCode {
     Timeout = ERR_TIMEOUT,
 }
 
-#[derive(Debug, TryFromPrimitive)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
 #[repr(i32)]
 /// Frequencies that the IMU can run at.
 pub enum ImuFrequency {
