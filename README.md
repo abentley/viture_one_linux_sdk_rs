@@ -6,19 +6,25 @@ both header and .so).  This version is based on the 1.0.3 release.
 
 They require libusb-1.0-0-dev and libudev-dev installed.  (libusb gets statically linked).
 
-Two crates are provided:
-viture-one-sdk-sys: Raw bindings via bindgen
+The main crate is viture_one_sdk.
 
-viture_one_sdk: Safe bindings via viture-one-sdk-sys.
+It provides safe bindings, using RAII and typestate to ensure that methods can only
+be called when it is appropriate.
 
-Included: safe bindings using RAII, unsafe bindings via bindgen in `viture_rs::sys`
-
-Functionality: Set and query whether IMU is enabled.  Set and query IMU
-frequency. Set and query whether SBS 3D is enabled.
+Functionality:
+* Set and query whether IMU is enabled.
+* Set and query IMU frequency.
+* Set and query whether SBS 3D is enabled.
+* Receive IMU data via a callback
+* Receiving message events is not yet supported because the C SDK hasn't
+  implemented it yet.
 
 To receive IMU data, implement CallbackImu.  If you want the raw data, you can
 implement RawCallbackImu, but this requires writing unsafe code.
 
-The Viture C SDK doesn't currently support event callbacks.
+The Viture C SDK provides an entrypoint for event callbacks, but it is not
+functional yet.  Accordingly, it's not exposed in the Rust bindings.
 
 The sample program demonstrates all currently-supported functionality.  It must be run as root.
+
+The secondary crate is viture-one-sdk-sys.  This provides raw bindings via bindgen.
