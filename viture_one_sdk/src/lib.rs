@@ -16,7 +16,7 @@ pub enum GeneralErrCode {
 #[derive(Debug, TryFromPrimitive)]
 #[repr(u32)]
 /// Recognized error codes for SdkErr
-pub enum MessageErrCode {
+pub enum CommandOutcome {
     // Exclude ERR_SUCCESS, because we want to use Result.
     Failure = ERR_FAILURE,
     InvalidArgument = ERR_INVALID_ARGUMENT,
@@ -36,15 +36,15 @@ pub enum SdkErr {
     GeneralErrCode(GeneralErrCode),
 
     /// Message Error codes are positive and overlap with other return values
-    MessageErrCode(MessageErrCode),
+    CommandOutcome(CommandOutcome),
 
     /// Error codes outside the range supported by the Sdk (and also 0 for success)
     UnknownCode(c_int),
 }
 
-impl From<MessageErrCode> for SdkErr {
-    fn from(code: MessageErrCode) -> SdkErr {
-        SdkErr::MessageErrCode(code)
+impl From<CommandOutcome> for SdkErr {
+    fn from(code: CommandOutcome) -> SdkErr {
+        SdkErr::CommandOutcome(code)
     }
 }
 
@@ -159,7 +159,7 @@ impl From<c_int> for SdkErr {
     fn from(discriminant: c_int) -> SdkErr {
         if let Ok(err) = GeneralErrCode::try_from(discriminant) {
             err.into()
-        } else if let Ok(err) = MessageErrCode::try_from(discriminant as u32) {
+        } else if let Ok(err) = CommandOutcome::try_from(discriminant as u32) {
             err.into()
         } else {
             SdkErr::UnknownCode(discriminant)
@@ -183,7 +183,7 @@ impl Sdk {
         unsafe {
             match init(Some(I::raw_imu_message), Some(M::raw_mcu_message)) {
                 true => Ok(Self {}),
-                false => Err(MessageErrCode::Failure.into()),
+                false => Err(CommandOutcome::Failure.into()),
             }
         }
     }
