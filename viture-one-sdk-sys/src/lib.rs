@@ -25,7 +25,7 @@ pub enum SdkErrCode {
 #[derive(Debug, TryFromPrimitive)]
 #[repr(i32)]
 /// Frequencies that the IMU can run at.
-enum IMU_FREQUENCY {
+enum ImuFrequency {
     Hz60 = IMU_FREQUENCE_60 as c_int,
     Hz90 = IMU_FREQUENCE_90 as c_int,
     Hz120 = IMU_FREQUENCE_120 as c_int,
