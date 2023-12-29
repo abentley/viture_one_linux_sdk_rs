@@ -1,6 +1,6 @@
 use std::io;
 use std::io::BufRead;
-use viture_one_sdk::{CallbackImu, ImuData, ImuFrequency, Sdk};
+use viture_one_sdk::{CallbackImu, ImuData, ImuFrequency, Sdk, State3d};
 
 pub struct Printer {}
 
@@ -25,14 +25,14 @@ fn process_commands(sdk: &mut Sdk) {
         match line.as_str() {
             "3d" => {
                 println!("Entering the third dimension");
-                sdk.set_3d(true).unwrap();
+                sdk.set_3d(State3d::On).unwrap();
             }
             "2d" => {
                 println!("Leaving the third dimension");
-                sdk.set_3d(false).unwrap();
+                sdk.set_3d(State3d::Off).unwrap();
             }
             "3d-state" => {
-                println!("3d state: {}", sdk.get_3d_state().unwrap())
+                println!("3d state: {:?}", sdk.get_3d_state().unwrap())
             }
             "imu" => {
                 println!("Engaging IMU");

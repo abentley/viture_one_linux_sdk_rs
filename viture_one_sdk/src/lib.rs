@@ -71,6 +71,12 @@ pub enum ImuFrequency {
     Hz240 = IMU_FREQUENCE_240 as c_int,
 }
 
+#[derive(Debug)]
+pub enum State3d {
+    Off,
+    On,
+}
+
 /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
 /// data is too expensive.
 pub trait RawCallbackImu {
@@ -242,8 +248,12 @@ impl Sdk {
     /**
      * Set 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
-    pub fn set_3d(&mut self, on_off: bool) -> Result<(), SdkErr> {
+    pub fn set_3d(&mut self, state: State3d) -> Result<(), SdkErr> {
         use viture_one_sdk_sys::set_3d;
+        let on_off = match state {
+            State3d::Off => false,
+            State3d::On => true,
+        };
         let result = unsafe { set_3d(on_off) };
         if result == ERR_SUCCESS {
             Ok(())
@@ -254,11 +264,11 @@ impl Sdk {
     /**
      * Get 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
-    pub fn get_3d_state(&mut self) -> Result<bool, SdkErr> {
+    pub fn get_3d_state(&mut self) -> Result<State3d, SdkErr> {
         use viture_one_sdk_sys::get_3d_state;
         match unsafe { get_3d_state() } {
-            0 => Ok(false),
-            1 => Ok(true),
+            0 => Ok(State3d::Off),
+            1 => Ok(State3d::On),
             x => Err(x.into()),
         }
     }
