@@ -1,6 +1,6 @@
 use std::io;
 use std::io::BufRead;
-use viture_one_sdk::{CallbackImu, ImuData, Sdk};
+use viture_one_sdk::{CallbackImu, ImuData, Sdk, ImuFrequency};
 
 pub struct Printer {}
 
@@ -46,6 +46,30 @@ fn process_commands(sdk: &mut Sdk) {
             }
             "imu-state" => {
                 println!("imu state: {}", sdk.get_imu_state().unwrap())
+            }
+            "imu-60" => {
+                println!("Setting IMU to 60 Hz");
+                sdk.set_imu_fq(ImuFrequency::Hz60).unwrap();
+                eprintln!();
+            }
+            "imu-90" => {
+                println!("Setting IMU to 90 Hz");
+                sdk.set_imu_fq(ImuFrequency::Hz90).unwrap();
+                eprintln!();
+            }
+            "imu-120" => {
+                println!("Setting IMU to 120 Hz");
+                sdk.set_imu_fq(ImuFrequency::Hz120).unwrap();
+                eprintln!();
+            }
+            "imu-240" => {
+                println!("Setting IMU to 240 Hz");
+                sdk.set_imu_fq(ImuFrequency::Hz240).unwrap();
+                eprintln!();
+            }
+            "imu-freq" => {
+                println!("Imu Frequency: {:?}", sdk.get_imu_fq().unwrap());
+                eprintln!();
             }
             "help" => help(),
             "?" => help(),
