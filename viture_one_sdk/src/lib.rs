@@ -230,10 +230,12 @@ impl Sdk {
     pub fn get_imu_fq(&mut self) -> Result<ImuFrequency, SdkErr> {
         use viture_one_sdk_sys::get_imu_fq;
         let fq = unsafe { get_imu_fq() };
-        if fq < 0 {
-            Err(SdkErr::from(fq))
+        if let Ok(freq) = ImuFrequency::try_from(fq) {
+            Ok(freq)
+        } else if let Ok(e) = GeneralErrCode::try_from(fq) {
+            Err(SdkErr::from(e))
         } else {
-            ImuFrequency::try_from(fq).map_err(|e| SdkErr::UnknownCode(e.number))
+            Err(SdkErr::UnknownCode(fq))
         }
     }
 
