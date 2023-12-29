@@ -1,5 +1,7 @@
+use std::ffi::c_int;
+
 // Return value indicating success
-const ERR_SUCCESS: i32 = viture_one_sdk_sys::ERR_SUCCESS as i32;
+const ERR_SUCCESS: c_int = viture_one_sdk_sys::ERR_SUCCESS as c_int;
 
 /// Error type
 #[derive(Debug)]
@@ -8,7 +10,7 @@ pub enum SdkErr {
     SdkErrCode(SdkErrCode),
 
     /// Error codes outside the range supported by the Sdk (and also 0 for success)
-    UnknownCode(i32),
+    UnknownCode(c_int),
 }
 
 impl From<SdkErrCode> for SdkErr {
@@ -17,7 +19,7 @@ impl From<SdkErrCode> for SdkErr {
     }
 }
 
-use viture_one_sdk_sys::SdkErrCode;
+use viture_one_sdk_sys::{ImuFrequency, SdkErrCode};
 
 /// Note: You should normally implement CallbackImu.  This is for cases where even converting the
 /// data is too expensive.
@@ -97,8 +99,8 @@ impl RawCallbackMcu for Noop {
     }
 }
 
-impl From<i32> for SdkErr {
-    fn from(discriminant: i32) -> SdkErr {
+impl From<c_int> for SdkErr {
+    fn from(discriminant: c_int) -> SdkErr {
         if let Ok(err) = SdkErrCode::try_from(discriminant) {
             err.into()
         } else {
@@ -159,6 +161,29 @@ impl Sdk {
             x => Err(x.into()),
         }
     }
+
+    pub fn set_imu_fq(frequency: ImuFrequency) -> Result<(), SdkErr> {
+        use viture_one_sdk_sys::set_imu_fq;
+        let result = unsafe { set_imu_fq(frequency.into()) };
+        if result == ERR_SUCCESS {
+            Ok(())
+        } else {
+            Err(result.into())
+        }
+    }
+
+    /**
+     * Get IMU state.  true: on, false: off
+     */
+    pub fn get_imu_fq(&mut self) -> Result<ImuFrequency, SdkErr> {
+        use viture_one_sdk_sys::get_imu_fq;
+        let fq = unsafe { get_imu_fq() };
+        let Ok(fq_enum) = ImuFrequency::try_from(fq) else {
+            return Err(fq.into())
+        };
+        Ok(fq_enum)
+    }
+
     /**
      * Set 3d state.  true: on (resolution 3840x1080), false: off (resolution 1920x1080)
      */
