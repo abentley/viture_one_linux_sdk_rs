@@ -162,7 +162,7 @@ impl Sdk {
         }
     }
 
-    pub fn set_imu_fq(frequency: ImuFrequency) -> Result<(), SdkErr> {
+    pub fn set_imu_fq(&mut self, frequency: ImuFrequency) -> Result<(), SdkErr> {
         use viture_one_sdk_sys::set_imu_fq;
         let result = unsafe { set_imu_fq(frequency.into()) };
         if result == ERR_SUCCESS {
@@ -178,10 +178,11 @@ impl Sdk {
     pub fn get_imu_fq(&mut self) -> Result<ImuFrequency, SdkErr> {
         use viture_one_sdk_sys::get_imu_fq;
         let fq = unsafe { get_imu_fq() };
-        let Ok(fq_enum) = ImuFrequency::try_from(fq) else {
-            return Err(fq.into())
-        };
-        Ok(fq_enum)
+        if fq < 0 {
+            Err(SdkErr::from(fq))
+        } else {
+            ImuFrequency::try_from(fq).map_err(|e|SdkErr::UnknownCode(e.number))
+        }
     }
 
     /**
