@@ -6,10 +6,8 @@ both header and .so).  This version is based on the 1.0.3 release.
 
 They require libusb-1.0-0-dev and libudev-dev installed.  (libusb gets statically linked).
 
-The main crate is viture_one_sdk.
-
-It provides safe bindings, using RAII and typestate to ensure that methods can only
-be called when it is appropriate.
+The main crate is viture_one_sdk. It provides safe bindings, using RAII and
+typestate to ensure that methods can only be called when it is appropriate.
 
 Functionality:
 * Set and query whether IMU is enabled.
